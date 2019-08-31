@@ -31,7 +31,7 @@ typedef size_t stringhm_iterator_t;
 
 bool stringhm_init(stringhm_t* const hm, const size_t initialCapacity);
 void* stringhm_find(const stringhm_t* const hm, const char* const key, const size_t keyLength);
-void* stringhm_add(stringhm_t* const hm, char* key, const size_t keyLength, void* const value);
+void* stringhm_add(stringhm_t* const hm, const char* key, const size_t keyLength, void* const value);
 void* stringhm_remove(stringhm_t* const hm, const char* const key, const size_t keyLength);
 // iterator
 stringhm_iterator_t stringhm_iteratorCreate();
@@ -40,5 +40,6 @@ stringhm_iterator_t stringhm_iteratorNextValue(const stringhm_t* const hm, strin
 stringhm_iterator_t stringhm_iteratorNextKeyValue(const stringhm_t* const hm, stringhm_iterator_t iterator, const char** const key, void** const value);
 // destructor
 void stringhm_destroy(stringhm_t* const hm);
+void stringhm_destroyWithValues(stringhm_t* const hm, void (*destructor)(void*));
 
 #endif //CSTRINGMAP_STRINGHM_H

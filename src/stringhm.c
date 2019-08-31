@@ -231,7 +231,7 @@ bool stringhm_rehash(stringhm_t* const hm, const size_t newCapacity) {
             continue;
         }
 
-        stringhm_insert(hm, element->key, element->payload);
+        assert(stringhm_insert(hm, element->key, element->payload) == NULL);
 
         // we don't need to destroy the key here as we don't copy it in stringhm_insert
 
@@ -329,9 +329,9 @@ void* stringhm_find(const stringhm_t* const hm, const char* const key, const siz
  * @param key key.
  * @param keyLength key length.
  * @param value value.
- * @return NULL on success, pointer to the dublicating element's payload on error or hashmap pointer on memory error
+ * @return NULL on success, pointer to the duplicating element's payload on error or hashmap pointer on memory error
  */
-void* stringhm_add(stringhm_t* const hm, char* key, const size_t keyLength, void* const value) {
+void* stringhm_add(stringhm_t* const hm, const char* key, const size_t keyLength, void* const value) {
 
     assert(hm != NULL);
     assert(keyLength > 0);
@@ -383,7 +383,7 @@ void* stringhm_add(stringhm_t* const hm, char* key, const size_t keyLength, void
  * @param hm hash map.
  * @param key key.
  * @param keyLength length (in bytes) of the key.
- * @return null error if the element was not found, hashmap pointer on memory error, associated payload pointer on success
+ * @return null if the element was not found, hashmap pointer on memory error, associated payload pointer on success
  */
 void* stringhm_remove(stringhm_t* const hm, const char* const key, const size_t keyLength) {
 
@@ -549,6 +549,26 @@ void stringhm_destroy(stringhm_t* const hm) {
 
         if (ELEMENT_IS_NOT_EMPTY(*currentElement)) {
             STRING_DESTROY(currentElement->key);
+        }
+
+    }
+
+    free(hm->table);
+
+}
+
+void stringhm_destroyWithValues(stringhm_t* const hm, void (*destructor)(void*)) {
+
+    stringhm_element_t* currentElement;
+    size_t i;
+
+    for (i = 0; i < hm->capacity; i++) {
+
+        currentElement = &hm->table[i];
+
+        if (ELEMENT_IS_NOT_EMPTY(*currentElement)) {
+            STRING_DESTROY(currentElement->key);
+            destructor(currentElement->payload);
         }
 
     }
