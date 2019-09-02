@@ -30,7 +30,7 @@ If you care about accurate numbers, please run the benchmark yourself. The neces
 ## Addition
 
 | N           | Time (ms) | Time (us) | Operation average time (ns) |
-| ----------- | --------- | --------- | --------------------------- |
+| :---------: | :-------: | :-------: | :-------------------------: |
 | 1000        | 0         | 234       | 234                         |
 | 10 000      | 1         | 1 884     | 188                         |
 | 100 000     | 17        | 17 623    | 176                         |
