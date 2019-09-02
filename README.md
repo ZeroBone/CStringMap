@@ -20,7 +20,48 @@ Header-only, optimized Hash Map implementation based on Robin Hood hashing imple
 * This data structure has an internal string implementation that is designed for fast string comparison and low memory usage.
   When a new key is added the c string and it's length is converted to the internal string representation.
   Therefore, all the keys are copied. This is normally what you want as a developer, but this could be a limitaion in some rare cases.
-* The maximum amount of elements in a hash map is `UINT_MAX / 2`. 
+* The maximum amount of elements in a hash map is `UINT_MAX / 2`.
+# Benchmark
+
+These benchmarks were made on a Windows machine with Intel (R) Core (TM) i7-4500U CPU with 64-bit Visual Studio 2017 compiler.
+
+If you care about accurate numbers, please run the benchmark yourself. The necessary benchmark files are located in the `benchmark` directory.
+
+## Addition
+
+| N           | Time (ms) | Time (us) | Operation average time (ns) |
+| ----------- | --------- | --------- | --------------------------- |
+| 1000        | 0         | 234       | 234                         |
+| 10 000      | 1         | 1 884     | 188                         |
+| 100 000     | 17        | 17 623    | 176                         |
+| 1 000 000   | 110       | 110 600   | 110                         |
+| 10 000 000  | 901       | 901 925   | 90                          |
+| 100 000 000 | 9 101     | 9 101 877 | 91                          |
+
+## Search
+
+`N` is the amount of searches and the amount of elements in the hash map. Every key is searched once.
+
+|      N      | Time (ms) | Time (us) | Operation average time (ns) |
+| :---------: | :-------: | :-------: | :-------------------------: |
+|    1000     |     0     |    136    |             136             |
+|   10 000    |     2     |   2 080   |             208             |
+|   100 000   |    11     |  11 319   |             113             |
+|  1 000 000  |    82     |  82 382   |             82              |
+| 10 000 000  |    754    |  754 930  |             75              |
+| 100 000 000 |   9 405   | 9 405 032 |             94              |
+
+## Deletion
+
+|      N      | Time (ms) | Time (us) | Operation average time (ns) |
+| :---------: | :-------: | :-------: | :-------------------------: |
+|    1000     |     0     |    87     |             87              |
+|   10 000    |     1     |   1 022   |             102             |
+|   100 000   |     9     |   9 869   |             98              |
+|  1 000 000  |    79     |  79 956   |             79              |
+| 10 000 000  |    858    |  858 881  |             85              |
+| 100 000 000 |   8 138   | 8 138 185 |             81              |
+
 # Usage
 All the files from the `src` directory can be dropped into an existing C/C++ project and compiled along with it.
 ## API
@@ -75,6 +116,8 @@ Worst case complexity: `O(n)` Average: `O(1)`
 
 ### `void* stringhm_add(stringhm_t* hm, const char* key, size_t keyLength, void* value)`
 Adds a key-value pair to the hash map.
+
+**Important**: `NULL` pointers as values are not allowed.
 
 Returns:
 * `NULL` on success.

@@ -19,10 +19,12 @@
 
 #define EXPAND_LIMIT (1024U * 1024)
 
-// 85%
-#define THRESHOLD_HIGH(x) (((x) * 85U) / 100U)
-// 40%
-#define THRESHOLD_LOW(x) (((x) * 40U) / 100U)
+// true if length > ~85% * capacity (885 / 1024)
+#define THRESHOLD_HIGH(length, capacity) ((length) > (((capacity) * 885U) >> 10U))
+// #define THRESHOLD_HIGH(length, capacity) ((length) > ((float)(capacity)) * 85.0f)
+// true if length < ~40% * capacity (403 / 1024)
+#define THRESHOLD_LOW(length, capacity) ((length) < (((capacity) * 403U) >> 10U))
+// #define THRESHOLD_LOW(length, capacity) ((length) < ((float)(capacity)) * 40.0f)
 
 #if _WIN32 || _WIN64
 #if _WIN64
@@ -338,7 +340,7 @@ void* stringhm_add(stringhm_t* const hm, const char* key, const size_t keyLength
     assert(value != NULL);
 
     // check the load factor and rehash if it exceeds the threshold
-    if (hm->length > THRESHOLD_HIGH(hm->capacity)) {
+    if (THRESHOLD_HIGH(hm->length, hm->capacity)) {
         // double the size of the hashmap but limit the step
 
         const size_t expandLimit = hm->capacity + EXPAND_LIMIT;
@@ -455,7 +457,7 @@ void* stringhm_remove(stringhm_t* const hm, const char* const key, const size_t 
     }
 
     // maybe we need to shrink the hash map
-    if (hm->length > hm->minCapacity && hm->length < THRESHOLD_LOW(hm->capacity)) {
+    if (hm->length > hm->minCapacity && THRESHOLD_LOW(hm->length, hm->capacity)) {
 
         // half the size but not exceed the limit (the limit is the initial (min) capacity)
         if (stringhm_rehash(hm, hm->capacity >> 1U > hm->minCapacity ? hm->capacity >> 1U : hm->minCapacity)) {

@@ -11,6 +11,7 @@
 
 #include <stdio.h>
 
+#include "benchmark/benchmark.h"
 #include "src/stringhm.h"
 
 char* testInitDestroy() {
@@ -102,7 +103,7 @@ char* testRemove1() {
 
 }
 
-int main() {
+int tests() {
 
     char* (*tests[])() = {
         testInitDestroy,
@@ -111,9 +112,6 @@ int main() {
         NULL
     };
 
-    printf("sizeof(void*) => %zu\n", sizeof(void*));
-    printf("sizeof(size_t) => %zu\n", sizeof(size_t));
-    printf("sizeof(stringhm_t) => %zu\n", sizeof(stringhm_t));
     puts("Starting tests...");
 
     size_t testsFailed = 0;
@@ -157,4 +155,25 @@ int main() {
     }
 
     return 0;
+
+}
+
+int benchmark() {
+
+    runBenchmarks();
+
+    return 0;
+
+}
+
+int main() {
+
+    printf("sizeof(void*) => %zu\n", sizeof(void*));
+    printf("sizeof(size_t) => %zu\n", sizeof(size_t));
+    printf("sizeof(stringhm_t) => %zu\n", sizeof(stringhm_t));
+
+    // return tests();
+
+    return benchmark();
+
 }
