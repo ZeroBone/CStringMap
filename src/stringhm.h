@@ -14,6 +14,7 @@
 
 #include <stdbool.h>
 #include <stdint.h>
+#include <stdio.h>
 
 #define STRINGHM_INITIAL_CAPACITY_DEFAULT 16
 

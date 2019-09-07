@@ -21,10 +21,10 @@
 
 // true if length > ~85% * capacity (885 / 1024)
 #define THRESHOLD_HIGH(length, capacity) ((length) > (((capacity) * 885U) >> 10U))
-// #define THRESHOLD_HIGH(length, capacity) ((length) > ((float)(capacity)) * 85.0f)
+// #define THRESHOLD_HIGH(length, capacity) ((length) > ((float)(capacity)) * .85f)
 // true if length < ~40% * capacity (403 / 1024)
 #define THRESHOLD_LOW(length, capacity) ((length) < (((capacity) * 403U) >> 10U))
-// #define THRESHOLD_LOW(length, capacity) ((length) < ((float)(capacity)) * 40.0f)
+// #define THRESHOLD_LOW(length, capacity) ((length) < ((float)(capacity)) * .40f)
 
 #if _WIN32 || _WIN64
 #if _WIN64
@@ -58,24 +58,24 @@ typedef struct {
     } payload;
 } stringhm_string_t;
 
-#define STRING_BUFFER(str) ((str).length < STRING_CACHED_BUFFER_SIZE ? (str).payload.cachedBuffer : (str).payload.buffer)
+#define STRING_BUFFER(str) ((str).length <= STRING_CACHED_BUFFER_SIZE ? (str).payload.cachedBuffer : (str).payload.buffer)
 
 #define STRING_EQUALS(str1, str2) (\
     (str1).length == (str2).length && \
-    (str1).length < STRING_CACHED_BUFFER_SIZE ? \
+    ((str1).length <= STRING_CACHED_BUFFER_SIZE ? \
         !memcmp((str1).payload.cachedBuffer, (str2).payload.cachedBuffer, (str1).length) : \
         !memcmp((str1).payload.buffer, (str2).payload.buffer, (str1).length) \
-    )
+    ))
 
 #define STRING_EQUALSC(str, cstr, cstrlen) (\
     (str).length == (cstrlen) && \
-    (str).length < STRING_CACHED_BUFFER_SIZE ? \
+    ((str).length <= STRING_CACHED_BUFFER_SIZE ? \
         !memcmp((str).payload.cachedBuffer, cstr, cstrlen) : \
         !memcmp((str).payload.buffer, cstr, cstrlen) \
-    )
+    ))
 
 #define STRING_DESTROY(str) \
-    if ((str).length >= STRING_CACHED_BUFFER_SIZE) { \
+    if ((str).length > STRING_CACHED_BUFFER_SIZE) { \
         free((str).payload.buffer); \
     }
 
@@ -116,6 +116,9 @@ void* stringhm_insert(stringhm_t* const hm, const stringhm_string_t key, void* c
     assert(hm != NULL);
     assert(key.length > 0);
     assert(value != NULL);
+    assert(hm->length < hm->capacity);
+
+    // printf("Insert key length: %zu\n", key.length);
 
     const uint32_t hash = stringhm_hash(hm, STRING_BUFFER(key), key.length);
 
@@ -143,7 +146,7 @@ void* stringhm_insert(stringhm_t* const hm, const stringhm_string_t key, void* c
 
             // did we find the key?
             if (element->hash == hash && STRING_EQUALS(element->key, key)) {
-                // dublicate key, insertion failed
+                // duplicate key, insertion failed
 
                 return element->payload;
 
@@ -191,27 +194,26 @@ void* stringhm_insert(stringhm_t* const hm, const stringhm_string_t key, void* c
  * @param hm the hash map.
  * @param newCapacity the new capacity.
  * @return true on error, false on success.
+ * @private
  */
 bool stringhm_rehash(stringhm_t* const hm, const size_t newCapacity) {
 
     assert(hm != NULL);
     assert(newCapacity > 0);
-    assert(newCapacity > hm->length);
-
-    stringhm_element_t* oldTable = hm->table; // can be NULL
-    const size_t oldCapacity = hm->capacity;
-
-    stringhm_element_t* newTable;
+    assert(newCapacity >= hm->length);
 
     // overflow check
     if (newCapacity > UINT_MAX / 2) {
         return true;
     }
 
+    stringhm_element_t* oldTable = hm->table; // can be NULL
+    const size_t oldCapacity = hm->capacity;
+
     // calloc instead of malloc because we need the memory to be initialized with zeroes
     // because if it is garbage memory, we cannot identify empty elements
     // Btw., calloc() is faster than malloc() and memset()
-    newTable = calloc(newCapacity, sizeof(stringhm_element_t));
+    stringhm_element_t* newTable = calloc(newCapacity, sizeof(stringhm_element_t));
 
     if (newTable == NULL) {
         return true;
@@ -221,10 +223,10 @@ bool stringhm_rehash(stringhm_t* const hm, const size_t newCapacity) {
     hm->capacity = newCapacity;
     hm->length = 0;
 
-    hm->seed ^= (unsigned int)rand(); // the first time we will xor the seed with garbage memory
+    hm->seed ^= (unsigned int)rand();
 
     size_t i;
-    for (i = 0; i < oldCapacity; i++) {
+    for (i = 0; i < oldCapacity; i++) { // oldCapacity can be 0
 
         const stringhm_element_t* element = &oldTable[i];
 
@@ -233,7 +235,13 @@ bool stringhm_rehash(stringhm_t* const hm, const size_t newCapacity) {
             continue;
         }
 
-        assert(stringhm_insert(hm, element->key, element->payload) == NULL);
+#ifndef NDEBUG
+        void* result =
+#endif
+        stringhm_insert(hm, element->key, element->payload);
+#ifndef NDEBUG
+        assert(result == NULL);
+#endif
 
         // we don't need to destroy the key here as we don't copy it in stringhm_insert
 
@@ -256,11 +264,14 @@ bool stringhm_rehash(stringhm_t* const hm, const size_t newCapacity) {
 bool stringhm_init(stringhm_t* const hm, const size_t initialCapacity) {
 
     assert(hm != NULL);
+    assert(initialCapacity >= 1);
 
     hm->capacity = 0;
     hm->length = 0;
 
     hm->table = NULL;
+
+    hm->seed = (unsigned int)rand();
 
     hm->minCapacity = initialCapacity;
 
@@ -338,6 +349,7 @@ void* stringhm_add(stringhm_t* const hm, const char* key, const size_t keyLength
     assert(hm != NULL);
     assert(keyLength > 0);
     assert(value != NULL);
+    assert(strlen(key) == keyLength);
 
     // check the load factor and rehash if it exceeds the threshold
     if (THRESHOLD_HIGH(hm->length, hm->capacity)) {
@@ -358,7 +370,7 @@ void* stringhm_add(stringhm_t* const hm, const char* key, const size_t keyLength
         .length = keyLength
     };
 
-    if (keyLength < STRING_CACHED_BUFFER_SIZE) {
+    if (keyLength <= STRING_CACHED_BUFFER_SIZE) {
         memcpy(internalKey.payload.cachedBuffer, key, keyLength);
     }
     else {
@@ -373,6 +385,8 @@ void* stringhm_add(stringhm_t* const hm, const char* key, const size_t keyLength
         internalKey.payload.buffer = buffer;
 
     }
+
+    // printf("Add internal key length: %zu\n", internalKey.length);
 
     return stringhm_insert(hm, internalKey, value);
 
@@ -392,6 +406,7 @@ void* stringhm_remove(stringhm_t* const hm, const char* const key, const size_t 
     assert(hm != NULL);
     assert(key != NULL);
     assert(keyLength > 0);
+    assert(strlen(key) == keyLength);
 
     const uint32_t hash = stringhm_hash(hm, (const uint8_t* const)key, keyLength);
 
@@ -452,6 +467,7 @@ void* stringhm_remove(stringhm_t* const hm, const char* const key, const size_t 
         currentElement->probeSequenceLength--;
 
         *element = *currentElement; // perform the shift
+
         element = currentElement; // shift the pointers for the next iteration
 
     }
@@ -459,12 +475,19 @@ void* stringhm_remove(stringhm_t* const hm, const char* const key, const size_t 
     // maybe we need to shrink the hash map
     if (hm->length > hm->minCapacity && THRESHOLD_LOW(hm->length, hm->capacity)) {
 
+        // printf("BEFORE SHRINK: Length: %10zu Capacity: %10zu\n", hm->length, hm->capacity);
+
         // half the size but not exceed the limit (the limit is the initial (min) capacity)
-        if (stringhm_rehash(hm, hm->capacity >> 1U > hm->minCapacity ? hm->capacity >> 1U : hm->minCapacity)) {
+        if (stringhm_rehash(hm, (hm->capacity >> 1U) > hm->minCapacity ? hm->capacity >> 1U : hm->minCapacity)) {
             return hm; // memory error
         }
 
+        // printf("AFTER SHRINK: Length: %10zu Capacity: %10zu\n", hm->length, hm->capacity);
+
     }
+    /*else {
+        printf("no shrink: Length: %10zu Capacity: %10zu\n", hm->length, hm->capacity);
+    }*/
 
     return payload;
 
