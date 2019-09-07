@@ -11,7 +11,7 @@ Header-only, optimized Hash Map implementation based on Robin Hood hashing imple
 * Interators for convenient hash map traversing.
 * Adjustable collapse/expand load factor.
 * The minimum capacity can be specified at initialization. The hash map will never get smaller than this value.
-* No destriptor heap-binding: you can allocate the hash table destriptor anywhere.
+* No destriptor heap-binding: you can allocate the hash table descriptor anywhere.
 * Readable and documented code.
 * Memory-safe: All memory errors are carefully handled and reported to the calee.
   This allows using this hash map implementation in robust software and on embedded platforms.   
@@ -112,7 +112,7 @@ Searches the key in the hash map.
 
 Returns pointer to the found value or `NULL` if there is no such key.
 
-Worst case complexity: `O(n)` Average: `O(1)`
+Worst case complexity: `O(ln(n))` Average: `O(1)`
 
 ### `void* stringhm_add(stringhm_t* hm, const char* key, size_t keyLength, void* value)`
 Adds a key-value pair to the hash map.
@@ -124,7 +124,7 @@ Returns:
 * pointer to the duplicating element's payload if such key already exists.
 * `hm` on memory error.
 
-Worst case complexity: `O(n)` Average: `O(1)`
+Worst case complexity: `O(ln(n))` Average: `O(1)`
 
 ### `void* stringhm_remove(stringhm_t* hm, const char* key, size_t keyLength)`
 Removes a key-value from the hash map by the key.
@@ -134,7 +134,7 @@ Returns:
 * `NULL` if there is no element with such key.
 * `hm` on memory error.
 
-Worst case complexity: `O(n)` Average: `O(1)`
+Worst case complexity: `O(ln(n))` Average: `O(1)`
 
 ### `void stringhm_destroy(stringhm_t* hm)`
 Destroyes the hash map without touching the values.
