@@ -68,7 +68,7 @@ char* testAdd1() {
 
 char* testRemove1() {
 
-    int a = 5, b = 2;
+    int a = 5;
 
     stringhm_t hm;
     stringhm_init(&hm, STRINGHM_INITIAL_CAPACITY_DEFAULT);
@@ -172,8 +172,8 @@ int main() {
     printf("sizeof(size_t) => %zu\n", sizeof(size_t));
     printf("sizeof(stringhm_t) => %zu\n", sizeof(stringhm_t));
 
-    // return tests();
+    return tests();
 
-    return benchmark();
+    // return benchmark();
 
 }

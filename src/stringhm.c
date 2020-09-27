@@ -20,10 +20,10 @@
 #define EXPAND_LIMIT (1024U * 1024)
 
 // true if length > ~85% * capacity (885 / 1024)
-#define THRESHOLD_HIGH(length, capacity) ((length) > (((capacity) * 885U) >> 10U))
+#define THRESHOLD_HIGH(length, capacity) ((length) > (((capacity) * 885u) >> 10u))
 // #define THRESHOLD_HIGH(length, capacity) ((length) > ((float)(capacity)) * .85f)
 // true if length < ~40% * capacity (403 / 1024)
-#define THRESHOLD_LOW(length, capacity) ((length) < (((capacity) * 403U) >> 10U))
+#define THRESHOLD_LOW(length, capacity) ((length) < (((capacity) * 403u) >> 10u))
 // #define THRESHOLD_LOW(length, capacity) ((length) < ((float)(capacity)) * .40f)
 
 #if _WIN32 || _WIN64
@@ -203,7 +203,7 @@ bool stringhm_rehash(stringhm_t* const hm, const size_t newCapacity) {
     assert(newCapacity >= hm->length);
 
     // overflow check
-    if (newCapacity > UINT_MAX / 2) {
+    if (newCapacity > UINT_MAX >> 1u) {
         return true;
     }
 
